@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>annin_ar4_joystick_servo</name>
+  <name>annin_ar4_multi_arm</name>
   <version>1.0.0</version>
   <description>
-    Examples of different ways to control the AR4 robot using ROS2.
+    Controlling multiple arms in simulation using MoveIt2.
   </description>
   <license>MIT</license>
 
@@ -12,11 +12,9 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <exec_depend>annin_ar4_moveit_config</exec_depend>
   <exec_depend>annin_ar4_description</exec_depend>
-  <exec_depend>launch_param_builder</exec_depend>
-  <exec_depend>moveit_servo</exec_depend>
-  <exec_depend>joy</exec_depend>
+  <exec_depend>annin_ar4_gazebo</exec_depend>
+  <exec_depend>annin_ar4_moveit_config</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
