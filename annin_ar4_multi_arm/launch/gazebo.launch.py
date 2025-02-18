@@ -61,7 +61,7 @@ def generate_launch_description():
             [FindPackageShare("ros_gz_sim"), "/launch", "/gz_sim.launch.py"]),
         launch_arguments={
             'gz_args':
-            f'-r -v 4 --physics-engine gz-physics-bullet-featherstone-plugin {world}',
+            f'-r -v 4 {world}',
             'on_exit_shutdown': 'True'
         }.items())
 
@@ -96,7 +96,7 @@ def generate_launch_description():
             package="robot_state_publisher",
             executable="robot_state_publisher",
             output="both",
-            parameters=[robot_description],
+            parameters=[robot_description, {"use_sim_time": True}],
             namespace=namespace,
             remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
         )
@@ -141,7 +141,7 @@ def generate_launch_description():
             package="ros_gz_sim",
             executable="create",
             arguments=[
-                "-name", ar_model_config, "-topic",
+                "-name", f"{namespace}_arm", "-topic",
                 f"{namespace}/robot_description", "-x", x_pos, "-y", "0", "-z",
                 "0"
             ],
