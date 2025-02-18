@@ -33,26 +33,23 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "use_sim_time",
-            default_value="False",
+            default_value="True",
             description="Use simulation time",
-        )
-    )
+        ))
     declared_arguments.append(
         DeclareLaunchArgument(
             "include_gripper",
             default_value="True",
             choices=["True", "False"],
             description="Whether to include the gripper",
-        )
-    )
+        ))
     declared_arguments.append(
         DeclareLaunchArgument(
             "ar_model",
             default_value="mk3",
             choices=["mk1", "mk2", "mk3"],
             description="Model for left arm",
-        )
-    )
+        ))
     declared_arguments.append(
         DeclareLaunchArgument(
             "tf_prefix",
@@ -62,23 +59,23 @@ def generate_launch_description():
 
     # Shared MoveIt configuration
     robot_description_kinematics = {
-        "robot_description_kinematics": load_yaml(
-            "annin_ar4_moveit_config",
-            os.path.join("config", "kinematics.yaml")
-        )
+        "robot_description_kinematics":
+        load_yaml("annin_ar4_moveit_config",
+                  os.path.join("config", "kinematics.yaml"))
     }
 
     joint_limits = ParameterFile(
         PathJoinSubstitution([
-            FindPackageShare("annin_ar4_moveit_config"),
-            "config",
+            FindPackageShare("annin_ar4_moveit_config"), "config",
             "joint_limits.yaml"
         ]),
         allow_substs=True,
     )
 
-    ompl_planning_yaml = load_yaml("annin_ar4_moveit_config", "config/ompl_planning.yaml")
-    pilz_planning_yaml = load_yaml("annin_ar4_moveit_config", "config/pilz_planning.yaml")
+    ompl_planning_yaml = load_yaml("annin_ar4_moveit_config",
+                                   "config/ompl_planning.yaml")
+    pilz_planning_yaml = load_yaml("annin_ar4_moveit_config",
+                                   "config/pilz_planning.yaml")
     planning_pipeline_config = {
         "default_planning_pipeline": "ompl",
         "planning_pipelines": ["ompl", "pilz"],
@@ -87,13 +84,13 @@ def generate_launch_description():
     }
 
     moveit_controller_manager = {
-        "moveit_controller_manager": "moveit_simple_controller_manager/MoveItSimpleControllerManager"
+        "moveit_controller_manager":
+        "moveit_simple_controller_manager/MoveItSimpleControllerManager"
     }
 
     moveit_controllers = ParameterFile(
         PathJoinSubstitution([
-            FindPackageShare("annin_ar4_moveit_config"),
-            "config",
+            FindPackageShare("annin_ar4_moveit_config"), "config",
             "controllers.yaml"
         ]),
         allow_substs=True,
@@ -115,25 +112,19 @@ def generate_launch_description():
     }
 
     move_group_capabilities = {
-        "capabilities": "pilz_industrial_motion_planner/MoveGroupSequenceAction pilz_industrial_motion_planner/MoveGroupSequenceService"
+        "capabilities":
+        "pilz_industrial_motion_planner/MoveGroupSequenceAction pilz_industrial_motion_planner/MoveGroupSequenceService"
     }
-
-    rviz_config_file = PathJoinSubstitution([
-                FindPackageShare("annin_ar4_moveit_config"),
-                "rviz",
-                "moveit.rviz"
-            ])
 
     # Create nodes for each arm in a loop
     nodes = []
-    for arm in ["left", "right"]:
+    for arm in ["/left", "/right"]:
         # Robot description using xacro
         robot_description_content = Command([
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
             PathJoinSubstitution([
-                FindPackageShare("annin_ar4_description"),
-                "urdf",
+                FindPackageShare("annin_ar4_description"), "urdf",
                 "ar.urdf.xacro"
             ]),
             " ",
@@ -153,8 +144,7 @@ def generate_launch_description():
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
             PathJoinSubstitution([
-                FindPackageShare("annin_ar4_moveit_config"),
-                "srdf",
+                FindPackageShare("annin_ar4_moveit_config"), "srdf",
                 "ar.srdf.xacro"
             ]),
             " ",
@@ -167,14 +157,15 @@ def generate_launch_description():
             "include_gripper:=",
             include_gripper,
         ])
-        robot_description_semantic = {"robot_description_semantic": robot_description_semantic_content}
+        robot_description_semantic = {
+            "robot_description_semantic": robot_description_semantic_content
+        }
 
         # Move group node for the arm
         move_group_node = Node(
             package="moveit_ros_move_group",
             executable="move_group",
             namespace=arm,
-            name=f"move_group_{arm}",
             output="screen",
             parameters=[
                 robot_description,
@@ -187,17 +178,24 @@ def generate_launch_description():
                 moveit_controllers,
                 planning_scene_monitor_parameters,
                 move_group_capabilities,
-                {"use_sim_time": use_sim_time},
+                {
+                    "use_sim_time": use_sim_time
+                },
             ],
+            remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
         )
         nodes.append(move_group_node)
 
         # RViz node for the arm
+        rviz_config_file = PathJoinSubstitution([
+            FindPackageShare("annin_ar4_multi_arm"),
+            "config",
+            f"moveit_{arm.replace('/', '')}.rviz"
+        ])
         rviz_node = Node(
             package="rviz2",
             executable="rviz2",
             namespace=arm,
-            name=f"rviz2_moveit_{arm}",
             output="log",
             arguments=["-d", rviz_config_file],
             parameters=[
@@ -205,8 +203,11 @@ def generate_launch_description():
                 robot_description_semantic,
                 planning_pipeline_config,
                 robot_description_kinematics,
-                {"use_sim_time": use_sim_time},
+                {
+                    "use_sim_time": use_sim_time
+                },
             ],
+            remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
         )
         nodes.append(rviz_node)
 
