@@ -56,14 +56,12 @@ def generate_launch_description():
     # Gazebo nodes
     world = os.path.join(get_package_share_directory('annin_ar4_gazebo'),
                          'worlds', 'empty.world')
-    gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [FindPackageShare("ros_gz_sim"), "/launch", "/gz_sim.launch.py"]),
-        launch_arguments={
-            'gz_args':
-            f'-r -v 4 {world}',
-            'on_exit_shutdown': 'True'
-        }.items())
+    gazebo = IncludeLaunchDescription(PythonLaunchDescriptionSource(
+        [FindPackageShare("ros_gz_sim"), "/launch", "/gz_sim.launch.py"]),
+                                      launch_arguments={
+                                          'gz_args': f'-r -v 4 {world}',
+                                          'on_exit_shutdown': 'True'
+                                      }.items())
 
     stuff_to_spawn = []
     for namespace in ["/left", "/right"]:
@@ -96,7 +94,12 @@ def generate_launch_description():
             package="robot_state_publisher",
             executable="robot_state_publisher",
             output="both",
-            parameters=[robot_description, {"use_sim_time": True}],
+            parameters=[
+                robot_description,
+                {
+                    "use_sim_time": True
+                },
+            ],
             namespace=namespace,
             remappings=[("/tf", "tf"), ("/tf_static", "tf_static")],
         )
@@ -136,7 +139,7 @@ def generate_launch_description():
             ],
         )
 
-        x_pos = "0.5" if namespace == "/left" else "-0.5"
+        x_pos = "-0.5" if namespace == "/left" else "0.5"
         gazebo_spawn_robot = Node(
             package="ros_gz_sim",
             executable="create",
@@ -149,22 +152,21 @@ def generate_launch_description():
             namespace=namespace,
         )
 
-        gazebo_bridge = Node(
-            package='ros_gz_bridge',
-            executable='parameter_bridge',
-            arguments=["/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock"],
-            output='screen',
-            namespace=namespace,
-        )
-
         stuff_to_spawn.extend([
             robot_state_publisher_node,
             joint_state_broadcaster_spawner,
             initial_joint_controller_spawner_started,
             gripper_joint_controller_spawner_started,
             gazebo_spawn_robot,
-            gazebo_bridge,
         ])
+
+    gazebo_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=["/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock"],
+        output='screen',
+    )
+    stuff_to_spawn.append(gazebo_bridge)
 
     return LaunchDescription([
         ar_model_arg,

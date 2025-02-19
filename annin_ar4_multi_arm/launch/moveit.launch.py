@@ -109,6 +109,7 @@ def generate_launch_description():
         "publish_state_updates": True,
         "publish_transforms_updates": True,
         "publish_robot_description_semantic": True,
+        "use_sim_time": True,
     }
 
     move_group_capabilities = {
@@ -188,8 +189,7 @@ def generate_launch_description():
 
         # RViz node for the arm
         rviz_config_file = PathJoinSubstitution([
-            FindPackageShare("annin_ar4_multi_arm"),
-            "config",
+            FindPackageShare("annin_ar4_multi_arm"), "config",
             f"moveit_{arm.replace('/', '')}.rviz"
         ])
         rviz_node = Node(
