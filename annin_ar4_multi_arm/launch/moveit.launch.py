@@ -74,13 +74,10 @@ def generate_launch_description():
 
     ompl_planning_yaml = load_yaml("annin_ar4_moveit_config",
                                    "config/ompl_planning.yaml")
-    pilz_planning_yaml = load_yaml("annin_ar4_moveit_config",
-                                   "config/pilz_planning.yaml")
     planning_pipeline_config = {
         "default_planning_pipeline": "ompl",
-        "planning_pipelines": ["ompl", "pilz"],
+        "planning_pipelines": ["ompl"],
         "ompl": ompl_planning_yaml,
-        "pilz": pilz_planning_yaml,
     }
 
     moveit_controller_manager = {
@@ -110,11 +107,6 @@ def generate_launch_description():
         "publish_transforms_updates": True,
         "publish_robot_description_semantic": True,
         "use_sim_time": True,
-    }
-
-    move_group_capabilities = {
-        "capabilities":
-        "pilz_industrial_motion_planner/MoveGroupSequenceAction pilz_industrial_motion_planner/MoveGroupSequenceService"
     }
 
     # Create nodes for each arm in a loop
@@ -178,7 +170,6 @@ def generate_launch_description():
                 moveit_controller_manager,
                 moveit_controllers,
                 planning_scene_monitor_parameters,
-                move_group_capabilities,
                 {
                     "use_sim_time": use_sim_time
                 },
