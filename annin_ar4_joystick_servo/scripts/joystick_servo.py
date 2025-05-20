@@ -16,11 +16,12 @@ from std_srvs.srv import SetBool
 
 
 class JoystickServo(Node):
+
     def __init__(self):
         super().__init__("joystick_servo")
 
         # Constants
-        self.gripper_open_position = -0.014
+        self.gripper_open_position = 0.014
         self.input_to_velocity_linear_scaling = 0.04
         self.input_to_velocity_angular_scaling = 0.3
         self.reset_pose = Pose(
@@ -33,10 +34,11 @@ class JoystickServo(Node):
         self._command_enabled: bool = False
         self._resetting = False
 
-        self.joy_sub = self.create_subscription(Joy, "/joy", self.joy_callback, 10)
-        self.servo_pub = self.create_publisher(
-            TwistStamped, "/servo_node/delta_twist_cmds", 10
-        )
+        self.joy_sub = self.create_subscription(Joy, "/joy", self.joy_callback,
+                                                10)
+        self.servo_pub = self.create_publisher(TwistStamped,
+                                               "/servo_node/delta_twist_cmds",
+                                               10)
 
         self.switch_command_type_client = self.create_client(
             ServoCommandType,
@@ -48,23 +50,20 @@ class JoystickServo(Node):
         )
 
         self.gripper_action_client = ActionClient(
-            self, GripperCommand, "/gripper_controller/gripper_cmd"
-        )
+            self, GripperCommand, "/gripper_controller/gripper_cmd")
 
-        while not self.switch_command_type_client.wait_for_service(timeout_sec=1.0):
+        while not self.switch_command_type_client.wait_for_service(
+                timeout_sec=1.0):
             self.get_logger().info(
-                "Switch command type service not available, waiting again..."
-            )
+                "Switch command type service not available, waiting again...")
 
         while not self.pause_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info(
-                "Pause servo service not available, waiting again..."
-            )
+                "Pause servo service not available, waiting again...")
 
         while not self.gripper_action_client.wait_for_server(timeout_sec=1.0):
             self.get_logger().info(
-                "Gripper action server not available, waiting again..."
-            )
+                "Gripper action server not available, waiting again...")
 
         self.arm_joint_names = [
             "joint_1",
@@ -85,19 +84,19 @@ class JoystickServo(Node):
         self.moveit2.planner_id = "RRTConnectkConfigDefault"
 
         self.timer = self.create_timer(
-            0.05, self.timer_callback, callback_group=MutuallyExclusiveCallbackGroup()
-        )
+            0.05,
+            self.timer_callback,
+            callback_group=MutuallyExclusiveCallbackGroup())
 
         # Switch to twist command type
         future = self.switch_command_type_client.call_async(
-            ServoCommandType.Request(command_type=ServoCommandType.Request.TWIST)
-        )
+            ServoCommandType.Request(
+                command_type=ServoCommandType.Request.TWIST))
         future.add_done_callback(
             partial(
                 self.service_callback,
                 service_name=self.switch_command_type_client.srv_name,
-            )
-        )
+            ))
 
         self._command_enabled = True
         self.get_logger().info("Joystick Servo Node has been started.")
@@ -132,9 +131,8 @@ class JoystickServo(Node):
         if self._last_joy_msg is None:
             return
 
-        if (
-            not self._resetting and self._last_joy_msg.buttons[7] == 1
-        ):  # Press Start to reset the arm
+        if (not self._resetting and self._last_joy_msg.buttons[7]
+                == 1):  # Press Start to reset the arm
             self.reset_arm()
 
         # Press B to disable the command
@@ -142,8 +140,8 @@ class JoystickServo(Node):
             self._logger.info("Disabling servo control")
             future = self.pause_client.call_async(SetBool.Request(data=True))
             future.add_done_callback(
-                partial(self.service_callback, service_name=self.pause_client.srv_name)
-            )
+                partial(self.service_callback,
+                        service_name=self.pause_client.srv_name))
             self._command_enabled = False
         # Press A to enable the command
         elif not self._command_enabled and self._last_joy_msg.buttons[0] == 1:
@@ -152,8 +150,8 @@ class JoystickServo(Node):
             # Unpause the servo
             future = self.pause_client.call_async(SetBool.Request(data=False))
             future.add_done_callback(
-                partial(self.service_callback, service_name=self.pause_client.srv_name)
-            )
+                partial(self.service_callback,
+                        service_name=self.pause_client.srv_name))
             self._command_enabled = True
 
         if not self._command_enabled:
@@ -161,7 +159,8 @@ class JoystickServo(Node):
 
         if self._last_joy_msg.buttons[3] == 1:  # Press Y to open the gripper
             self.send_gripper_command(self.gripper_open_position)
-        elif self._last_joy_msg.buttons[2] == 1:  # Press X to close the gripper
+        elif self._last_joy_msg.buttons[
+                2] == 1:  # Press X to close the gripper
             self.send_gripper_command(0.0)
 
         twist = TwistStamped()
@@ -223,7 +222,8 @@ class JoystickServo(Node):
         try:
             response = future.result()
             if response.success:
-                self.get_logger().info(f"{service_name} service call succeeded")
+                self.get_logger().info(
+                    f"{service_name} service call succeeded")
             else:
                 self.get_logger().error(f"{service_name} service call failed")
         except Exception as e:
